@@ -30,7 +30,7 @@ def count_sliding_window_depth_increases(depths: list[int]) -> int:
 
 if __name__ == '__main__':
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        depths = [int(line) for line in file.readlines()]
+        depths = [int(line) for line in file]
 
     print(f"Depth increases:  {count_depth_increases(depths)}")
     print(f"Sliding window depth increases:  {count_sliding_window_depth_increases(depths)}")

@@ -46,7 +46,7 @@ def move_submarine_2(commands: list[str]) -> tuple[int, int]:
 
 if __name__ == '__main__':
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        commands = file.readlines()
+        commands = [line.rstrip() for line in file]
 
     print("--- Part One ---")
     horizontal_position, depth = move_submarine(commands)
