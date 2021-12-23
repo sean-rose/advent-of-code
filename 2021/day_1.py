@@ -3,6 +3,9 @@
 from pathlib import Path
 
 
+FILE_PATH = Path(__file__)
+
+
 def count_depth_increases(depths: list[int]) -> int:
     depth_increases_count = 0
     previous_depth = None
@@ -26,7 +29,7 @@ def count_sliding_window_depth_increases(depths: list[int]) -> int:
 
 
 if __name__ == '__main__':
-    with open(Path(__file__).parent / 'day_1_input.txt') as file:
+    with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
         depths = [int(line) for line in file.readlines()]
 
     print(f"Depth increases:  {count_depth_increases(depths)}")
