@@ -13,7 +13,8 @@ class BingoNumber:
 
 
 class BingoBoard:
-    def __init__(self) -> None:
+    def __init__(self, id: int) -> None:
+        self.id = id
         self.rows: list[list[BingoNumber]] = []
     
     def add_row(self, row: list[BingoNumber]) -> None:
@@ -42,23 +43,21 @@ if __name__ == '__main__':
             new_row = [numbers[int(number_str)] for number_str in line.split()]
             if new_row:
                 if not new_board:
-                    new_board = BingoBoard()
+                    new_board = BingoBoard(len(boards) + 1)
                     boards.append(new_board)
                 new_board.add_row(new_row)
             else:
                 new_board = None
         print(f"Boards:  {len(boards)}")
     
-    winning_board = None
+    winning_boards: set[BingoBoard] = set()
     for number in numbers_to_be_drawn:
         number.is_marked = True
-        for board_number, board in enumerate(boards, start=1):
-            if board.has_won():
-                winning_board = board
-                winning_score = winning_board.sum_unmarked_numbers() * number.value
-                print(f"Board {board_number} won with score {winning_score}.")
-                break
-        if winning_board:
-            break
-    else:
-        raise Exception("Didn't find a winning board.")
+        for board in boards:
+            if board.has_won() and board not in winning_boards:
+                winning_boards.add(board)
+                winning_score = board.sum_unmarked_numbers() * number.value
+                if len(winning_boards) == 1:
+                    print(f"Board {board.id} won first with score {winning_score}.")
+                elif len(winning_boards) == len(boards):
+                    print(f"Board {board.id} won last with score {winning_score}.")
