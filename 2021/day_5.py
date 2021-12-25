@@ -69,3 +69,12 @@ if __name__ == '__main__':
         if vent_count > 1
     )
     print(f"Points with at least two horizontal or vertical vents:  {multiple_horizontal_vertical_vent_points_count}")
+
+    vents_per_point = count_vents_per_point(vent_lines)
+    multiple_vent_points_count = sum(
+        1
+        for row in vents_per_point.values()
+        for vent_count in row.values()
+        if vent_count > 1
+    )
+    print(f"Points with at least two vents:  {multiple_vent_points_count}")
