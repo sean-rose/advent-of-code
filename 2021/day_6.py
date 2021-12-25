@@ -1,23 +1,28 @@
 #!/usr/bin/env python
 
+import functools
 from pathlib import Path
 
 
 FILE_PATH = Path(__file__)
 
 
+@functools.lru_cache(maxsize=None)
+def simulate_population_growth(days_until_reproduction: int, simulate_days: int) -> int:
+    population = 1
+    while simulate_days > days_until_reproduction:
+        simulate_days -= days_until_reproduction + 1
+        population += simulate_population_growth(8, simulate_days)
+        days_until_reproduction = 6
+    return population
+
+
 if __name__ == '__main__':
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        current_fish = [int(number_str) for number_str in file.readline().rstrip().split(',')]
+        fish = [int(number_str) for number_str in file.readline().rstrip().split(',')]
 
-    for day in range(1, 81):
-        new_fish = []
-        for index, fish in enumerate(current_fish):
-            if fish == 0:
-                new_fish.append(8)
-                current_fish[index] = 6
-            else:
-                current_fish[index] = fish - 1
-        current_fish.extend(new_fish)
+    fish_after_80_days = sum(simulate_population_growth(days_until_reproduction, 80) for days_until_reproduction in fish)
+    print(f"Fish after 80 days:  {fish_after_80_days}")
 
-    print(f"Fish after 80 days:  {len(current_fish)}")
+    fish_after_256_days = sum(simulate_population_growth(days_until_reproduction, 256) for days_until_reproduction in fish)
+    print(f"Fish after 256 days:  {fish_after_256_days}")
