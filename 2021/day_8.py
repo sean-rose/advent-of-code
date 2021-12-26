@@ -38,9 +38,8 @@ Segment frequencies (digits they appear in):
     f = 9  (0 1   3 4 5 6 7 8 9)
     g = 7  (0   2 3   5 6   8 9)
 '''
-def decode_display(unique_signal_patterns: list[str], display_patterns: list[str]):
+def decode_display(unique_signal_patterns: list[str], display_patterns: list[str]) -> int:
     signal_corrections = {}
-    unique_signal_patterns = [''.join(pattern) for pattern in unique_signal_patterns]
     signal_frequencies = {signal: sum(1 for pattern in unique_signal_patterns if signal in pattern) for signal in 'abcdefg'}
     for signal, frequency in signal_frequencies.items():
         if frequency == 6:
@@ -69,16 +68,19 @@ def decode_display(unique_signal_patterns: list[str], display_patterns: list[str
             signal_corrections[signal] = 'g'
             break
     corrected_display_patterns = [''.join(sorted(signal_corrections[signal] for signal in pattern)) for pattern in display_patterns]
-    return [DIGIT_SIGNAL_PATTERNS[pattern] for pattern in corrected_display_patterns]
+    return int(''.join(str(DIGIT_SIGNAL_PATTERNS[pattern]) for pattern in corrected_display_patterns))
 
 
 if __name__ == '__main__':
-    display_digits: list[list[int]] = []
+    display_numbers: list[int] = []
 
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
         for line in file.readlines():
             unique_signal_patterns, output = [[pattern for pattern in part.split()] for part in line.rstrip().split('|')]
-            display_digits.append(decode_display(unique_signal_patterns, output))
+            display_numbers.append(decode_display(unique_signal_patterns, output))
 
-    count_of_1478 = sum(sum(1 for digit in digits if digit in (1, 4, 7, 8)) for digits in display_digits)
+    count_of_1478 = sum(sum(1 for digit in str(number) if digit in '1478') for number in display_numbers)
     print(f"How many times digits 1, 4, 7, or 8 appear:  {count_of_1478}")
+
+    display_numbers_sum = sum(display_numbers)
+    print(f"Sum of all the output values:  {display_numbers_sum}")
