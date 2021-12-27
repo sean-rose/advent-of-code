@@ -39,7 +39,7 @@ if __name__ == '__main__':
         print(f"Numbers to be drawn:  {len(numbers_to_be_drawn)}")
 
         new_board = None
-        for line in file.readlines():
+        for line in file:
             new_row = [numbers[int(number_str)] for number_str in line.split()]
             if new_row:
                 if not new_board:

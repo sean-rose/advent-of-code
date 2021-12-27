@@ -49,7 +49,7 @@ if __name__ == '__main__':
     vent_lines: list[Line] = []
 
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        for line in file.readlines():
+        for line in file:
             line_parts = line.rstrip().split()
             if line_parts and len(line_parts) == 3:
                 start_point = Point(*(int(number_str) for number_str in line_parts[0].split(',')))

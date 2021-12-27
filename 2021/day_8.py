@@ -75,7 +75,7 @@ if __name__ == '__main__':
     display_numbers: list[int] = []
 
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        for line in file.readlines():
+        for line in file:
             unique_signal_patterns, output = [[pattern for pattern in part.split()] for part in line.rstrip().split('|')]
             display_numbers.append(decode_display(unique_signal_patterns, output))
 
