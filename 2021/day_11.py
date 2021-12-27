@@ -47,8 +47,11 @@ if __name__ == '__main__':
         ]
 
     octopi = [octopus for row in octopus_grid for octopus in row]
+    step = 0
+    first_all_flash_step = None
     total_flash_count = 0
-    for step in range(1, 101):
+    while step <= 100 or not first_all_flash_step:
+        step += 1
         step_flash_count = 0
         for octopus in octopi:
             increase_octopus_energy_level(octopus, octopus_grid)
@@ -58,4 +61,12 @@ if __name__ == '__main__':
                 octopus.has_just_flashed = False
         print(f"Step {step} flashes:  {step_flash_count}")
         total_flash_count += step_flash_count
+
+        if step % 100 == 0:
+            print(f"Total flashes after {step} steps:  {total_flash_count}")
+
+        if step_flash_count == len(octopi) and not first_all_flash_step:
+            first_all_flash_step = step
+    
     print(f"Total flashes after {step} steps:  {total_flash_count}")
+    print(f"First step during which all octopuses flash:  {first_all_flash_step}")
