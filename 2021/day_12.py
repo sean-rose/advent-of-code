@@ -21,14 +21,16 @@ class Cave():
         return self.name
 
 
-def find_paths_not_repeating_small_caves(start_path: list[Cave]) -> list[list[Cave]]:
+def find_paths(start_path: list[Cave], allow_repeating_one_small_cave: bool = False) -> list[list[Cave]]:
     paths: list[list[Cave]] = []
     for adjascent_cave in start_path[-1].adjascent_caves:
         extended_path = start_path + [adjascent_cave]
         if adjascent_cave.is_end:
             paths.append(extended_path)
         elif adjascent_cave.is_large or adjascent_cave not in start_path:
-            paths.extend(find_paths_not_repeating_small_caves(extended_path))
+            paths.extend(find_paths(extended_path, allow_repeating_one_small_cave))
+        elif allow_repeating_one_small_cave and not adjascent_cave.is_start:
+            paths.extend(find_paths(extended_path, allow_repeating_one_small_cave=False))
     return paths
 
 
@@ -49,7 +51,8 @@ if __name__ == '__main__':
         cave_1.adjascent_caves.append(cave_2)
         cave_2.adjascent_caves.append(cave_1)
 
-    paths = find_paths_not_repeating_small_caves([caves['start']])
-    print(f"Found {len(paths)} paths that don't repeat small caves:")
-    for path in paths:
-        print(','.join(str(cave) for cave in path))
+    paths_not_repeating_small_caves = find_paths([caves['start']], allow_repeating_one_small_cave=False)
+    print(f"Found {len(paths_not_repeating_small_caves)} paths that don't repeat small caves.")
+
+    paths_repeating_one_small_cave = find_paths([caves['start']], allow_repeating_one_small_cave=True)
+    print(f"Found {len(paths_repeating_one_small_cave)} paths that can repeat one small cave twice.")
