@@ -6,7 +6,7 @@ from pathlib import Path
 FILE_PATH = Path(__file__)
 
 
-class Octopus():
+class Octopus:
     def __init__(self, x: int, y: int, energy_level: int) -> None:
         self.x = x
         self.y = y

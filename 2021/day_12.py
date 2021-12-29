@@ -6,7 +6,7 @@ from pathlib import Path
 FILE_PATH = Path(__file__)
 
 
-class Cave():
+class Cave:
     def __init__(self, name: str) -> None:
         self.name = name
         self.is_start = name == 'start'
