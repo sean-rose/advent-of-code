@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from abc import ABC as AbstractBaseClass, abstractmethod
 from pathlib import Path
 
 
@@ -29,24 +30,53 @@ def int_from_bits(bits: str) -> int:
     return sum((2 ** index if bit == '1' else 0) for index, bit in enumerate(reversed(bits)))
 
 
-class Packet:
+class Packet(AbstractBaseClass):
     def __init__(self, bits: str, version: int, type_id: int) -> None:
         self.bits = bits
         self.length = len(bits)
         self.version = version
         self.type_id = type_id
 
+    @property
+    @abstractmethod
+    def value(self) -> int:
+        pass
+
 
 class LiteralValuePacket(Packet):
     def __init__(self, bits: str, version: int, type_id: int, value: int) -> None:
         super().__init__(bits, version, type_id)
-        self.value = value
+        self._value = value
+
+    @property
+    def value(self) -> int:
+        return self._value
 
 
 class OperatorPacket(Packet):
     def __init__(self, bits: str, version: int, type_id: int, sub_packets: list[Packet]) -> None:
         super().__init__(bits, version, type_id)
         self.sub_packets = sub_packets
+
+    @property
+    def value(self) -> int:
+        if self.type_id == 0:
+            return sum(sub_packet.value for sub_packet in self.sub_packets)
+        elif self.type_id == 1:
+            value = self.sub_packets[0].value
+            for sub_packet in self.sub_packets[1:]:
+                value *= sub_packet.value
+            return value
+        elif self.type_id == 2:
+            return min(sub_packet.value for sub_packet in self.sub_packets)
+        elif self.type_id == 3:
+            return max(sub_packet.value for sub_packet in self.sub_packets)
+        elif self.type_id == 5:
+            return 1 if self.sub_packets[0].value > self.sub_packets[1].value else 0
+        elif self.type_id == 6:
+            return 1 if self.sub_packets[0].value < self.sub_packets[1].value else 0
+        elif self.type_id == 7:
+            return 1 if self.sub_packets[0].value == self.sub_packets[1].value else 0
 
 
 def parse_packet(bits: str) -> Packet:
@@ -55,10 +85,10 @@ def parse_packet(bits: str) -> Packet:
     content_offset = 6
     if type_id == 4:
         packet = parse_literal_value_packet(bits, version, type_id, content_offset)
-        print(f"Parsed literal value {packet.value} packet (version {version}).")
+        print(f"Parsed literal value packet (version {version}) with value {packet.value}.")
     else:
         packet = parse_operator_packet(bits, version, type_id, content_offset)
-        print(f"Parsed operator type {type_id} packet (version {version}) with {len(packet.sub_packets)} sub-packets.")
+        print(f"Parsed operator type {type_id} packet (version {version}) with {len(packet.sub_packets)} sub-packets and value {packet.value}.")
     return packet
 
 
@@ -115,6 +145,7 @@ if __name__ == '__main__':
 
     transmission_bits = ''.join(HEXADECIMAL_BITS[char] for char in transmission_hexadecimal)
     packet = parse_packet(transmission_bits)
+    print(f"Packet value:  {packet.value}")
 
     packet_versions_sum = sum_packet_versions(packet)
     print(f"Packet versions sum:  {packet_versions_sum}")
