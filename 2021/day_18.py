@@ -18,9 +18,14 @@ class SnailfishNumber:
         return f"[{self.left},{self.right}]"
 
     def __add__(self, other: SnailfishNumber) -> SnailfishNumber:
-        result = SnailfishNumber(self, other)
+        result = SnailfishNumber(self.copy(), other.copy())
         result.reduce()
         return result
+
+    def copy(self) -> SnailfishNumber:
+        left_copy = self.left.copy() if isinstance(self.left, SnailfishNumber) else self.left
+        right_copy = self.right.copy() if isinstance(self.right, SnailfishNumber) else self.right
+        return SnailfishNumber(left_copy, right_copy)
 
     @property
     def magnitude(self) -> int:
@@ -132,7 +137,16 @@ if __name__ == '__main__':
 
     total = snailfish_numbers[0]
     for snailfish_number in snailfish_numbers[1:]:
-        print(f"\n  {total}")
+        print(f"  {total}")
         print(f"+ {snailfish_number}")
         total = total + snailfish_number
-        print(f"= {total} ({total.magnitude})")
+        print(f"= {total} ({total.magnitude})\n")
+
+    sums = [
+        (a, b, a + b)
+        for a in snailfish_numbers
+        for b in snailfish_numbers
+        if a != b
+    ]
+    max_sum = max(sums, key=lambda sum: sum[2].magnitude)
+    print(f"Largest sum of two snailfish numbers:\n  {max_sum[0]}\n+ {max_sum[1]}\n= {max_sum[2]} ({max_sum[2].magnitude})")
