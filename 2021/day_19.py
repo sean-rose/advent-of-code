@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import itertools
 from pathlib import Path
 import re
 from typing import Optional
@@ -95,6 +96,14 @@ def align_scanner(scanner: Scanner, aligned_scanners: list[Scanner]) -> bool:
     return False
 
 
+def manhattan_distance(point_a: tuple[int, int, int], point_b: tuple[int, int, int]) -> int:
+    return (
+        abs(point_a[0] - point_b[0])
+        + abs(point_a[1] - point_b[1])
+        + abs(point_a[2] - point_b[2])
+    )
+
+
 if __name__ == '__main__':
     scanners: list[Scanner] = []
 
@@ -127,3 +136,14 @@ if __name__ == '__main__':
         for beacon_coordinates in scanner.beacon_coordinates
     )
     print(f"Beacons count:  {len(all_beacon_coordinates)}")
+
+    scanner_distances = [
+        (scanner_a, scanner_b, manhattan_distance(scanner_a.coordinates, scanner_b.coordinates))
+        for scanner_a, scanner_b in itertools.combinations(aligned_scanners, 2)
+    ]
+    scanner_a, scanner_b, max_scanner_distance = max(scanner_distances, key=lambda scanner_distance: scanner_distance[2])
+    print(
+        f"Largest Manhattan distance is {max_scanner_distance}"
+        f" between scanner {scanner_a.number} at {scanner_a.coordinates}"
+        f" and scanner {scanner_b.number} at {scanner_b.coordinates}."
+    )
