@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     image = Image(image_lines)
     print(image)
-    for step in range(1,3):
+    for step in range(1,51):
         image = enhance_image(image, image_enhancement_algorithm)
-        print(f"\nEnhancement {step}:\n{image}")
-
-    print(f"\nPixels lit:  {str(image).count('#')}")
+        if step in (2, 50):
+            print(f"\nEnhancement {step}:\n{image}")
+            print(f"Pixels lit:  {str(image).count('#')}")
