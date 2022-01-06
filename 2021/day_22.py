@@ -113,3 +113,6 @@ if __name__ == '__main__':
     ]
     initialization_on_volume = sum(region.volume for region in initialization_on_regions)
     print(f"Cubes on in initialization region:  {initialization_on_volume}")
+
+    on_volume = sum(region.volume for region in reactor.on_regions)
+    print(f"Total cubes on:  {on_volume}")
