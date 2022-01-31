@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import annotations
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -14,7 +15,7 @@ STEP_ENERGY = {
     'D': 1000
 }
 
-ORGANIZED_MAP = (
+ORGANIZED_FOLDED_MAP = (
     '#############',
     '#...........#',
     '###A#B#C#D###',
@@ -22,14 +23,15 @@ ORGANIZED_MAP = (
     '  #########'
 )
 
-ROOM_SPACES = {
-    'A': ((3, 2), (3, 3)),
-    'B': ((5, 2), (5, 3)),
-    'C': ((7, 2), (7, 3)),
-    'D': ((9, 2), (9, 3))
-}
-
-NEVER_STOP_SPACES = ((3, 1), (5, 1), (7, 1), (9, 1))
+ORGANIZED_UNFOLDED_MAP = (
+    '#############',
+    '#...........#',
+    '###A#B#C#D###',
+    '  #A#B#C#D#',
+    '  #A#B#C#D#',
+    '  #A#B#C#D#',
+    '  #########'
+)
 
 ADJASCENT_DIFFS = (
               (0, -1),
@@ -50,8 +52,8 @@ class Move:
         self.previous_move = previous_move
 
 
-def try_get_room(space: Space) -> Optional[str]:
-    for room, spaces in ROOM_SPACES.items():
+def try_get_room(space: Space, room_spaces: dict[str, list[Space]]) -> Optional[str]:
+    for room, spaces in room_spaces.items():
         if space in spaces:
             return room
     return None
@@ -78,32 +80,42 @@ def find_reachable_spaces_steps(map: Map, from_space: Space, exclude_space: Opti
     return reachable_spaces_steps
 
 
-def find_amphipod_moves(current_move: Move) -> list[Move]:
+def find_amphipod_moves(current_move: Move, room_spaces: dict[str, list[Space]]) -> list[Move]:
     moves: list[Move] = []
     for y, line in enumerate(current_move.map):
         for x, char in enumerate(line):
             if char in ('A', 'B', 'C', 'D'):
                 amphipod_type = char
                 from_space = (x, y)
-                from_room = try_get_room(from_space)
+                from_room = try_get_room(from_space, room_spaces)
                 if from_room and amphipod_type == from_room:
-                    from_room_spaces = ROOM_SPACES[from_room]
-                    if from_space == from_room_spaces[1] or current_move.map[from_room_spaces[1][1]][from_room_spaces[1][0]] == amphipod_type:
+                    from_room_spaces = room_spaces[from_room]
+                    from_room_space_index = from_room_spaces.index(from_space)
+                    if not any(
+                        current_move.map[from_room_space[1]][from_room_space[0]] != amphipod_type
+                        for from_room_space in from_room_spaces[from_room_space_index + 1:]
+                    ):
                         continue
                 for to_space, steps in find_reachable_spaces_steps(current_move.map, from_space):
-                    if to_space in NEVER_STOP_SPACES:
-                        continue
-                    to_room = try_get_room(to_space)
+                    to_room = try_get_room(to_space, room_spaces)
                     if to_room:
-                        to_room_spaces = ROOM_SPACES[to_room]
+                        to_room_spaces = room_spaces[to_room]
+                        to_room_space_index = to_room_spaces.index(to_space)
                         if (
                             to_room != amphipod_type
-                            or (from_room and to_room == from_room)
-                            or any(current_move.map[to_room_space[1]][to_room_space[0]] not in (amphipod_type, '.') for to_room_space in to_room_spaces)
-                            or (to_space == to_room_spaces[0] and current_move.map[to_room_spaces[1][1]][to_room_spaces[1][0]] == '.')
+                            or any(
+                                current_move.map[to_room_space[1]][to_room_space[0]] not in (amphipod_type, '.')
+                                for to_room_space in to_room_spaces
+                            )
+                            or any(
+                                current_move.map[to_room_space[1]][to_room_space[0]] == '.'
+                                for to_room_space in to_room_spaces[to_room_space_index + 1:]
+                            )
                         ):
                             continue
                     elif from_room is None:
+                        continue
+                    elif try_get_room((to_space[0], to_space[1] + 1), room_spaces) is not None:
                         continue
                     new_map = move_amphipod(current_move.map, from_space, to_space)
                     moves.append(Move(new_map, steps * STEP_ENERGY[amphipod_type], current_move))
@@ -124,35 +136,42 @@ def move_amphipod(map: Map, from_space: Space, to_space: Space) -> Map:
     )
 
 
-def organize_amphipods(map: Map) -> list[Move]:
+def organize_amphipods(map: Map, organized_map: Map) -> list[Move]:
     start_move = Move(map)
     least_energy_moves_to_state: dict[Map, Move] = {
         map: start_move
     }
+
+    room_spaces: dict[str, list[Space]] = defaultdict(list)
+    for y, line in enumerate(organized_map):
+        for x, char in enumerate(line):
+            if char in ('A', 'B', 'C', 'D'):
+                room_spaces[char].append((x, y))
+
     moves_to_explore: dict[Map, Move] = {
         move.map: move
-        for move in find_amphipod_moves(start_move)
+        for move in find_amphipod_moves(start_move, room_spaces)
     }
     explored_move_count = 0
     ignored_local_suboptimal_move_count = 0
     ignored_global_suboptimal_move_count = 0
 
     while moves_to_explore:
-        map, move = moves_to_explore.popitem()
+        new_map, move = moves_to_explore.popitem()
 
-        if map in least_energy_moves_to_state and move.total_energy_used >= least_energy_moves_to_state[map].total_energy_used:
+        if new_map in least_energy_moves_to_state and move.total_energy_used >= least_energy_moves_to_state[new_map].total_energy_used:
             ignored_local_suboptimal_move_count += 1
             continue
 
-        if ORGANIZED_MAP in least_energy_moves_to_state and move.total_energy_used >= least_energy_moves_to_state[ORGANIZED_MAP].total_energy_used:
+        if organized_map in least_energy_moves_to_state and move.total_energy_used >= least_energy_moves_to_state[organized_map].total_energy_used:
             ignored_global_suboptimal_move_count += 1
             continue
 
-        least_energy_moves_to_state[map] = move
-        if map == ORGANIZED_MAP:
+        least_energy_moves_to_state[new_map] = move
+        if new_map == organized_map:
             print(f"Found solution that uses {move.total_energy_used} energy.")
 
-        for next_move in find_amphipod_moves(move):
+        for next_move in find_amphipod_moves(move, room_spaces):
             if next_move.map in moves_to_explore and next_move.total_energy_used >= moves_to_explore[next_move.map].total_energy_used:
                 ignored_local_suboptimal_move_count += 1
                 continue
@@ -167,7 +186,7 @@ def organize_amphipods(map: Map) -> list[Move]:
     print(f"Ignored {ignored_global_suboptimal_move_count} globally suboptimal moves.")
 
     move_traceback = []
-    move = least_energy_moves_to_state[ORGANIZED_MAP]
+    move = least_energy_moves_to_state[organized_map]
     while move:
         move_traceback.append(move)
         move = move.previous_move
@@ -176,12 +195,31 @@ def organize_amphipods(map: Map) -> list[Move]:
 
 if __name__ == '__main__':
     with open(FILE_PATH.parent / f'{FILE_PATH.stem}_input.txt') as file:
-        initial_map = tuple(line.rstrip() for line in file if line.rstrip())
-        print("\n".join(initial_map))
+        folded_map = tuple(line.rstrip() for line in file if line.rstrip())
+        print("Folded map:")
+        print("\n".join(folded_map))
 
-    moves = organize_amphipods(initial_map)
-    print(f"Least energy solution has {len(moves)} moves.")
-    for move in moves:
+    folded_map_moves = organize_amphipods(folded_map, ORGANIZED_FOLDED_MAP)
+    print(f"Least energy solution for folded map has {len(folded_map_moves)} moves.")
+    for move in folded_map_moves:
         print("\n".join(move.map))
         print(f"Energy used:  {move.energy_used}")
-    print(f"Total energy used:  {moves[-1].total_energy_used}")
+    print(f"Total energy used for folded map:  {folded_map_moves[-1].total_energy_used}")
+
+    unfolded_map = (
+        folded_map[:3]
+        + (
+            '  #D#C#B#A#',
+            '  #D#B#A#C#'
+        )
+        + folded_map[3:]
+    )
+    print("Unfolded map:")
+    print("\n".join(unfolded_map))
+
+    unfolded_map_moves = organize_amphipods(unfolded_map, ORGANIZED_UNFOLDED_MAP)
+    print(f"Least energy solution for unfolded map has {len(unfolded_map_moves)} moves.")
+    for move in unfolded_map_moves:
+        print("\n".join(move.map))
+        print(f"Energy used:  {move.energy_used}")
+    print(f"Total energy used for unfolded map:  {unfolded_map_moves[-1].total_energy_used}")
