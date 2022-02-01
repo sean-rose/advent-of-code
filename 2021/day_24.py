@@ -55,11 +55,12 @@ if __name__ == '__main__':
             input_instruction_sets.append(input_instruction_set)
         input_instruction_set.append(instruction)
 
-    max_model_number_per_z_value = {0: 0}
+    min_max_model_numbers_per_z_value: dict[int, list[int, int]] = {0: [0, 0]}
     for input_number, input_instruction_set in enumerate(input_instruction_sets, start=1):
-        new_max_model_number_per_z_value = {}
+        new_min_max_model_numbers_per_z_value: dict[int, list[int, int]] = {}
         z_cutoff = 26 ** (len(input_instruction_sets) - input_number)
-        for z_value, max_model_number in max_model_number_per_z_value.items():
+        for z_value, (min_model_number, max_model_number) in min_max_model_numbers_per_z_value.items():
+            new_min_model_number_base = min_model_number * 10
             new_max_model_number_base = max_model_number * 10
             for digit in range(1, 10):
                 alu = ALU({'z': z_value})
@@ -67,13 +68,20 @@ if __name__ == '__main__':
                 z = alu.vars['z']
                 if z >= z_cutoff:
                     continue
+                new_min_model_number = new_min_model_number_base + digit
                 new_max_model_number = new_max_model_number_base + digit
-                existing_max_model_number = new_max_model_number_per_z_value.get(z)
-                if not existing_max_model_number or new_max_model_number > existing_max_model_number:
-                    new_max_model_number_per_z_value[z] = new_max_model_number
-        max_model_number_per_z_value = new_max_model_number_per_z_value
+                existing_min_max_model_numbers = new_min_max_model_numbers_per_z_value.get(z)
+                if not existing_min_max_model_numbers:
+                    new_min_max_model_numbers_per_z_value[z] = [new_min_model_number, new_max_model_number]
+                else:
+                    if new_min_model_number < existing_min_max_model_numbers[0]:
+                        existing_min_max_model_numbers[0] = new_min_model_number
+                    if new_max_model_number > existing_min_max_model_numbers[1]:
+                        existing_min_max_model_numbers[1] = new_max_model_number
+        min_max_model_numbers_per_z_value = new_min_max_model_numbers_per_z_value
         print(
-            f"Possible z values after input {input_number}:  {len(max_model_number_per_z_value)}"
-            f"  (min {min(max_model_number_per_z_value.keys())}, max {max(max_model_number_per_z_value.keys())})"
+            f"Possible z values after input {input_number}:  {len(min_max_model_numbers_per_z_value)}"
+            f"  (min {min(min_max_model_numbers_per_z_value)}, max {max(min_max_model_numbers_per_z_value)})"
         )
-    print(f"Max model number:  {max_model_number_per_z_value[0]}")
+    print(f"Min model number:  {min_max_model_numbers_per_z_value[0][0]}")
+    print(f"Max model number:  {min_max_model_numbers_per_z_value[0][1]}")
